@@ -2,7 +2,8 @@
 #include <curl/curl.h>
 #include "cJSON/cJSON.h"
 #include "private.h"
-#include <ctime> /* time_t, struct tm, time, gmtime */
+#include <ctime>   /* time_t, struct tm, time, gmtime */
+#include <fstream> // std::fstream
 
 using namespace std;
 
@@ -23,6 +24,28 @@ std::string curlPost(std::string url, cJSON *data)
     {
         curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
         curl_easy_setopt(curl, CURLOPT_POSTFIELDS, cJSON_Print(data));
+        curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
+        curl_easy_setopt(curl, CURLOPT_WRITEDATA, &readBuffer);
+        res = curl_easy_perform(curl);
+        curl_easy_cleanup(curl);
+    }
+    return readBuffer;
+}
+
+//cURL make a http post request
+std::string curlSendFile(std::string url, uint8_t *data, size_t len)
+{
+    CURL *curl;
+    CURLcode res;
+    std::string readBuffer;
+    curl = curl_easy_init();
+    struct curl_slist *list = NULL;
+    if (curl)
+    {
+        curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
+        curl_easy_setopt(curl, CURLOPT_POSTFIELDS, data);
+        curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE_LARGE, len);
+        curl_easy_setopt(curl, CURLOPT_HTTPHEADER, list);
         curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
         curl_easy_setopt(curl, CURLOPT_WRITEDATA, &readBuffer);
         res = curl_easy_perform(curl);
@@ -71,12 +94,26 @@ int main()
 {
     std::time_t t = std::time(0); // t is an integer type
 
-    cJSON *data = cJSON_CreateObject();
-    cJSON_AddNumberToObject(data, "time", t);
-    std::string result = curlPost(PRIVATE_URL, data);
-    cJSON *saved_files = get(PRIVATE_URL);
-    getLastEntrie(saved_files);
-    cJSON_Delete(data);
+
+
+    std::ifstream fs;
+    fs.open(path, std::ifstream::in | std::ifstream::binary);
+
+    fs.seekg(0, ios::end);
+    size_t length = fs.tellg();
+    fs.seekg(0, ios::beg);
+    uint8_t *buffer = new uint8_t[length];
+    fs.read((char*)buffer, length);
+    cout << length << endl;
+    cout << curlSendFile(url, buffer,length) << endl;
+    fs.close();
+
+    //cJSON *data = cJSON_CreateObject();
+    //cJSON_AddNumberToObject(data, "time", t);
+    //std::string result = curlPost(PRIVATE_URL, data);
+    //cJSON *saved_files = get(PRIVATE_URL);
+    //getLastEntrie(saved_files);
+    //cJSON_Delete(data);
 
     return 0;
 }
