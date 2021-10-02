@@ -2,6 +2,7 @@
 #include <curl/curl.h>
 #include "cJSON/cJSON.h"
 #include "private.h"
+#include <ctime> /* time_t, struct tm, time, gmtime */
 
 using namespace std;
 
@@ -52,12 +53,16 @@ cJSON *get(std::string url)
 
 int main()
 {
+    std::time_t t = std::time(0);  // t is an integer type
+    std::cout << t << " seconds since 01-Jan-1970\n";
+
     cJSON *saved_files = get(PRIVATE_URL);
     cout << "Saved files" << cJSON_Print(saved_files) << endl;
+
     cJSON *data = cJSON_CreateObject();
-    cJSON_AddStringToObject(data, "name", "test");
-    cJSON_AddNumberToObject(data, "slot", 1);
+    cJSON_AddNumberToObject(data, "time", t);
     std::string result = curlPost(PRIVATE_URL, data);
-    cout << result << endl;
+    cJSON_Delete(data);
+    
     return 0;
 }
