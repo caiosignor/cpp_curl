@@ -33,19 +33,29 @@ std::string curlPost(std::string url, cJSON *data)
 }
 
 //cURL make a http post request
-std::string curlSendFile(std::string url, uint8_t *data, size_t len)
+std::string curlSendFile(std::string url, char *filepath, char *filename)
 {
     CURL *curl;
     CURLcode res;
     std::string readBuffer;
     curl = curl_easy_init();
-    struct curl_slist *list = NULL;
+
+    std::ifstream fs;
+    fs.open(filepath, std::ifstream::in | std::ifstream::binary);
+
+    fs.seekg(0, ios::end);
+    size_t len = fs.tellg();
+    fs.seekg(0, ios::beg);
+    uint8_t *buffer = new uint8_t[len];
+    fs.read((char *)buffer, len);
+    fs.close();
+
+    url += filename;
     if (curl)
     {
         curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
-        curl_easy_setopt(curl, CURLOPT_POSTFIELDS, data);
+        curl_easy_setopt(curl, CURLOPT_POSTFIELDS, buffer);
         curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE_LARGE, len);
-        curl_easy_setopt(curl, CURLOPT_HTTPHEADER, list);
         curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
         curl_easy_setopt(curl, CURLOPT_WRITEDATA, &readBuffer);
         res = curl_easy_perform(curl);
@@ -93,21 +103,7 @@ cJSON *getLastEntrie(cJSON *objects)
 int main()
 {
     std::time_t t = std::time(0); // t is an integer type
-
-
-
-    std::ifstream fs;
-    fs.open(path, std::ifstream::in | std::ifstream::binary);
-
-    fs.seekg(0, ios::end);
-    size_t length = fs.tellg();
-    fs.seekg(0, ios::beg);
-    uint8_t *buffer = new uint8_t[length];
-    fs.read((char*)buffer, length);
-    cout << length << endl;
-    cout << curlSendFile(url, buffer,length) << endl;
-    fs.close();
-
+    curlSendFile(url, (char*)path, "0004000000033600.02.cst");
     //cJSON *data = cJSON_CreateObject();
     //cJSON_AddNumberToObject(data, "time", t);
     //std::string result = curlPost(PRIVATE_URL, data);
