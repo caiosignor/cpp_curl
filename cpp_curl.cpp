@@ -51,18 +51,32 @@ cJSON *get(std::string url)
     return ret;
 }
 
+/**
+ * @brief Get the last entries of the database based on timestamp
+ * 
+ * @return cJSON* object
+ */
+cJSON *getLastEntrie(cJSON *objects)
+{
+    cJSON *last = objects->child;
+    cJSON *ret = last;
+    do
+    {
+        ret = last;
+        last = last->next;
+    } while (last != NULL);
+    return ret;
+}
 int main()
 {
-    std::time_t t = std::time(0);  // t is an integer type
-    std::cout << t << " seconds since 01-Jan-1970\n";
-
-    cJSON *saved_files = get(PRIVATE_URL);
-    cout << "Saved files" << cJSON_Print(saved_files) << endl;
+    std::time_t t = std::time(0); // t is an integer type
 
     cJSON *data = cJSON_CreateObject();
     cJSON_AddNumberToObject(data, "time", t);
     std::string result = curlPost(PRIVATE_URL, data);
+    cJSON *saved_files = get(PRIVATE_URL);
+    getLastEntrie(saved_files);
     cJSON_Delete(data);
-    
+
     return 0;
 }
